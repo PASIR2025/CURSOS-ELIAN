@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Tratamiento Térmico de Aceros</title>
+<style>
+  body {font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin:0; padding:0; background:#1e1e2f; color:#f0f0f0;}
+  h1 {text-align:center; padding:20px; background:#4e5d6c; margin:0; border-bottom:4px solid #0077cc;}
+  .container {max-width:650px; margin:30px auto; background:#2b2b3f; padding:25px; border-radius:12px; box-shadow:0 5px 15px rgba(0,0,0,0.4);}
+  label {display:block; margin-top:15px; font-weight:bold; color:#a0c4ff;}
+  input, select, button {width:100%; padding:10px; margin-top:5px; border-radius:8px; border:none; outline:none; font-size:1em;}
+  input, select {background:#3b3b5c; color:#f0f0f0;}
+  button {margin-top:20px; background-color:#0077cc; color:white; cursor:pointer; font-weight:bold; transition:0.3s;}
+  button:hover {background-color:#005fa3;}
+  #printBtn {background-color:#00cc77; margin-top:10px;}
+  #printBtn:hover {background-color:#009955;}
+  .accordion {background-color:#3b3b5c; color:#00d4ff; cursor:pointer; padding:12px 20px; margin-top:10px; border:none; text-align:left; outline:none; font-size:1.1em; transition:0.3s; border-radius:8px;}
+  .accordion:hover {background-color:#505073;}
+  .panel {padding:10px 20px; display:none; background-color:#2b2b3f; border-left:4px solid #0077cc; margin-bottom:10px; border-radius:0 8px 8px 0;}
+  .panel ul {padding-left:20px;}
+  .panel ul li {margin-bottom:5px;}
+  .concepto {font-style:italic; color:#ffd166; margin-bottom:5px;}
+  .proposito {font-style:normal; color:#90ee90; margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Calculadora de Tratamiento Térmico</h1>
+  
+  <label for="steelType">Selecciona el tipo de acero:</label>
+  <select id="steelType">
+    <option value="" disabled selected>-- Selecciona acero --</option>
+    <option value="bajo">Acero al carbono bajo</option>
+    <option value="medio">Acero al carbono medio</option>
+    <option value="alto">Acero al carbono alto</option>
+    <option value="aleado">Acero aleado (Cr, Mo, Ni)</option>
+  </select>
+
+  <label for="dimension">Diámetro o espesor de la pieza (mm):</label>
+  <input type="number" id="dimension" placeholder="Ej. 20">
+
+  <button onclick="calcular()">Calcular Tratamiento</button>
+  <button id="printBtn" onclick="window.print()">Imprimir / Guardar PDF</button>
+
+  <div id="result" class="result" style="display:none;"></div>
+</div>
+
+<script>
+function calcular() {
+  const steel = document.getElementById('steelType').value;
+  const dim = parseFloat(document.getElementById('dimension').value);
+
+  if(!steel || !dim || dim <= 0){
+    alert("Por favor ingresa todos los datos correctamente.");
+    return;
+  }
+
+  // Definición de tratamientos y sus conceptos/propósitos
+  let treatments = {
+    "Templado": {
+      "Concepto":"Es un tratamiento térmico que consiste en calentar el acero a una temperatura elevada (por encima del punto crítico), seguido de un enfriamiento rápido, generalmente en agua, aceite o aire forzado.",
+      "Propósito":"Aumentar la dureza y la resistencia mecánica del material, aunque también puede aumentar la fragilidad si no se combina con revenido.",
+      "Temperatura":"780-950 °C",
+      "Medio de enfriamiento":"Aceite, agua o aire forzado",
+      "Tiempo de mantenimiento":`${Math.max(1, dim)} minutos`
+    },
+    "Revenido": {
+      "Concepto":"Es un tratamiento que se aplica después del templado. Consiste en calentar el acero a una temperatura inferior a la crítica y mantenerlo un tiempo determinado, luego se enfría lentamente.",
+      "Propósito":"Reducir la fragilidad del acero templado, manteniendo parte de su dureza, mejorando la tenacidad y la elasticidad.",
+      "Temperatura":"150-300 °C",
+      "Tiempo de mantenimiento":"1-3 horas"
+    },
+    "Recocido": {
+      "Concepto":"Consiste en calentar el acero a una temperatura determinada, mantenerlo durante un tiempo y luego enfriarlo lentamente, generalmente dentro del horno.",
+      "Propósito":"Suavizar el material, mejorar su maquinabilidad, homogeneizar la estructura interna, eliminar tensiones internas y facilitar trabajos posteriores de conformado o mecanizado.",
+      "Temperatura":"700-900 °C",
+      "Tiempo de mantenimiento":`${Math.ceil(dim/25*1.5)} horas`,
+      "Enfriamiento":"Horno o aislado"
+    },
+    "Normalizado": {
+      "Concepto":"Se calienta el acero a una temperatura por encima de la crítica y luego se deja enfriar al aire libre.",
+      "Propósito":"Refinar la estructura del grano, equilibrar la dureza y la ductilidad, eliminar tensiones internas y mejorar las propiedades mecánicas de manera uniforme.",
+      "Temperatura":"800-940 °C",
+      "Tiempo de mantenimiento":`${Math.ceil(dim/25)} horas`,
+      "Enfriamiento":"Aire"
+    }
+  };
+
+  const resultDiv = document.getElementById('result');
+  resultDiv.innerHTML = "";
+
+  for(const [treatment, details] of Object.entries(treatments)){
+    let html = `
+      <button class="accordion">${treatment}</button>
+      <div class="panel">
+        <div class="concepto">${details.Concept}</div>
+        <div class="proposito"><strong>Propósito:</strong> ${details.Propósito}</div>
+        <ul>
+    `;
+    for(const [key, value] of Object.entries(details)){
+      if(key !== "Concepto" && key !== "Propósito"){
+        html += `<li><strong>${key}:</strong> ${value}</li>`;
+      }
+    }
+    html += `</ul></div>`;
+    resultDiv.innerHTML += html;
+  }
+  resultDiv.style.display = "block";
+
+  // Activar comportamiento accordion
+  const acc = document.getElementsByClassName("accordion");
+  for (let i = 0; i < acc.length; i++) {
+    acc[i].onclick = function() {
+      // Para cerrar los demás y abrir solo este
+      for (let j = 0; j < acc.length; j++) {
+        if(j !== i) acc[j].nextElementSibling.style.display = "none";
+      }
+      this.classList.toggle("active");
+      const panel = this.nextElementSibling;
+      panel.style.display = (panel.style.display === "block") ? "none" : "block";
+    }
+  }
+}
+</script>
+</body>
+</html>
