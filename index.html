@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agenda de Contenido</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-soft: #0b1220;
+      --card: #020617;
+      --border: #1e293b;
+      --accent: #38bdf8;
+      --accent-soft: #0ea5e9;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --success: #22c55e;
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f3f4f6;
+      --bg-soft: #ffffff;
+      --card: #ffffff;
+      --border: #d1d5db;
+      --accent: #0ea5e9;
+      --accent-soft: #0284c7;
+      --text: #0f172a;
+      --muted: #6b7280;
+      --success: #16a34a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(to bottom, var(--bg), var(--bg), var(--bg-soft));
+      padding: 10px 6px 8px;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    header p {
+      margin: 2px 0 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .top-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    #dateInput {
+      padding: 6px 8px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text);
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0b1120;
+    }
+
+    .btn-primary.off {
+      background: #6b7280;
+      color: #f9fafb;
+    }
+
+    .btn-green {
+      background: var(--success);
+      color: #ecfdf5;
+    }
+
+    .btn-back {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding-inline: 10px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding-inline: 10px;
+    }
+
+    .section-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin: 12px 0 6px;
+      color: var(--text);
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .time-input {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+      min-width: 70px;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+    }
+
+    .time-input:disabled {
+      opacity: 0.7;
+    }
+
+    .task-input {
+      flex: 1;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 6px;
+      font-size: 0.85rem;
+      background: var(--bg-soft);
+      color: var(--text);
+    }
+
+    .task-input.locked {
+      border-style: dashed;
+      opacity: 0.9;
+    }
+
+    .btn-small {
+      border: none;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      padding: 4px 6px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .btn-move {
+      border-color: #f59e0b;
+      color: #fbbf24;
+    }
+
+    .btn-delete {
+      border-color: #ef4444;
+      color: #b91c1c;
+    }
+
+    .card.selected-move {
+      outline: 2px solid #fbbf24;
+    }
+
+    .small {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+
+    .week-row {
+      font-size: 0.8rem;
+      padding: 4px 0;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .week-day {
+      font-weight: 600;
+      min-width: 70px;
+      color: var(--text);
+    }
+
+    .week-text {
+      color: var(--muted);
+    }
+
+    /* VISTAS */
+    #agendaView,
+    #strategyView {
+      margin-top: 8px;
+    }
+
+    /* STRATEGY VIEW (estilo Notion fullscreen) */
+    #strategyView {
+      display: none;
+      padding: 10px 4px 20px;
+    }
+
+    .strategy-header {
+      margin-bottom: 10px;
+    }
+
+    .strategy-tag {
+      font-size: 0.7rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .strategy-title {
+      margin-top: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .strategy-sub {
+      margin-top: 2px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .strategy-section {
+      background: var(--bg-soft);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .strategy-section h3 {
+      margin: 0 0 4px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .strategy-section h3 span.icon {
+      font-size: 0.95rem;
+    }
+
+    .strategy-section small {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .strategy-textarea {
+      width: 100%;
+      min-height: 70px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 6px;
+      font-size: 0.82rem;
+      resize: vertical;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    @media (min-width: 720px) {
+      .strategy-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="app">
+      <h1>Agenda de Contenido</h1>
+      <p>Organiza tus lives, videos y cursos por día</p>
+
+      <div class="top-row">
+        <input id="dateInput" type="date" />
+        <button id="toggleEdit" class="btn btn-primary off">
+          ✏️ Editar agenda
+        </button>
+        <button id="addSlot" class="btn btn-green">
+          ➕ Agregar hora
+        </button>
+        <button id="themeToggle" class="btn btn-ghost">
+          ☀️ Modo claro
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app">
+    <!-- VISTA AGENDA -->
+    <section id="agendaView">
+      <div class="section-title">🕒 Agenda del día</div>
+      <p class="hint">
+        • Toca una actividad (con la agenda bloqueada) para ver su estrategia completa.<br />
+        • “↕ Mover” intercambia solo actividades (y su estrategia). Las horas se
+        quedan igual.<br />
+        • “Editar agenda” te deja cambiar horas y textos directamente. En modo editar
+        NO se abre la estrategia.
+      </p>
+
+      <div id="slotsContainer"></div>
+
+      <hr />
+
+      <div class="section-title">📆 Resumen semanal</div>
+
+      <div class="week-row">
+        <div class="week-day">Lunes</div>
+        <div class="week-text">Celsa + lives x3 + TikToks.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Martes</div>
+        <div class="week-text">Editar Celsa + subir YouTube + lives x3.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Miércoles</div>
+        <div class="week-text">Grabar curso + manual + lives x3.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Jueves</div>
+        <div class="week-text">Editar curso + productos digitales + lives x3.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Viernes</div>
+        <div class="week-text">Canal aventuras + YouTube + lives x3.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Sábado</div>
+        <div class="week-text">Grabación libre + ideas + lives x3.</div>
+      </div>
+      <div class="week-row">
+        <div class="week-day">Domingo</div>
+        <div class="week-text">Planificar + descanso + lives x2.</div>
+      </div>
+
+      <p class="small">
+        Todo se guarda localmente por día (en este dispositivo).
+      </p>
+    </section>
+
+    <!-- VISTA ESTRATEGIA (ESTILO NOTION FULLSCREEN) -->
+    <section id="strategyView">
+      <button id="backToAgenda" class="btn btn-back">
+        ← Volver a la agenda
+      </button>
+
+      <div class="strategy-header">
+        <div class="strategy-tag" id="strategyTag">
+          📅 <span id="strategyDateLabel"></span>
+        </div>
+        <div class="strategy-title" id="strategyMainTitle">
+          Estrategia para esta actividad
+        </div>
+        <div class="strategy-sub" id="strategySubTitle"></div>
+      </div>
+
+      <div class="strategy-grid">
+        <div class="strategy-section">
+          <h3><span class="icon">🎯</span> Objetivo del bloque</h3>
+          <small>¿Qué quieres lograr con esta actividad hoy?</small>
+          <textarea
+            id="fieldObjective"
+            class="strategy-textarea"
+          ></textarea>
+        </div>
+
+        <div class="strategy-section">
+          <h3><span class="icon">🧩</span> Pasos del contenido</h3>
+          <small>Orden de lo que harás: explicación, demo, historias, etc.</small>
+          <textarea id="fieldSteps" class="strategy-textarea"></textarea>
+        </div>
+      </div>
+
+      <div class="strategy-grid">
+        <div class="strategy-section">
+          <h3><span class="icon">📣</span> CTA / Venta</h3>
+          <small>
+            Frases y acciones para vender (manuales, cursos, apps, combos).
+          </small>
+          <textarea id="fieldCTA" class="strategy-textarea"></textarea>
+        </div>
+
+        <div class="strategy-section">
+          <h3><span class="icon">📝</span> Notas y mejoras</h3>
+          <small>
+            Ideas, cosas que funcionaron bien, cosas a probar mañana.
+          </small>
+          <textarea id="fieldNotes" class="strategy-textarea"></textarea>
+        </div>
+      </div>
+
+      <p class="small">
+        Las estrategias también se guardan por día y por actividad. Puedes
+        usarlas como plantilla y ajustarlas según lo que funciona.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const dateInput = document.getElementById("dateInput");
+    const btnEdit = document.getElementById("toggleEdit");
+    const btnAddSlot = document.getElementById("addSlot");
+    const themeToggle = document.getElementById("themeToggle");
+    const slotsContainer = document.getElementById("slotsContainer");
+
+    const agendaView = document.getElementById("agendaView");
+    const strategyView = document.getElementById("strategyView");
+    const backToAgenda = document.getElementById("backToAgenda");
+
+    const strategyDateLabel = document.getElementById("strategyDateLabel");
+    const strategyMainTitle = document.getElementById("strategyMainTitle");
+    const strategySubTitle = document.getElementById("strategySubTitle");
+
+    const fieldObjective = document.getElementById("fieldObjective");
+    const fieldSteps = document.getElementById("fieldSteps");
+    const fieldCTA = document.getElementById("fieldCTA");
+    const fieldNotes = document.getElementById("fieldNotes");
+
+    let editMode = false;
+    let moveSourceCard = null;
+    let currentStrategyIndex = null;
+
+    const DEFAULT_SLOTS = [
+      {
+        time: "08:30",
+        task: "Organizar el día: revisar mensajes, anotar ideas de videos y lives."
+      },
+      {
+        time: "09:00",
+        task: "Grabar videos (Celsa / YouTube electricidad / clips para Shorts)."
+      },
+      {
+        time: "10:15",
+        task: "LIVE 1: enseñanza rápida (tip eléctrico, error común, demo corta)."
+      },
+      {
+        time: "11:00",
+        task: "Editar videos, crear miniaturas y preparar Shorts / TikToks."
+      },
+      {
+        time: "15:00",
+        task: "LIVE 2: live de ventas (manuales, cursos, apps, kits)."
+      },
+      {
+        time: "16:10",
+        task: "Trabajar en cursos, manuales y mejoras de Logicsoft / CalcMotor."
+      },
+      {
+        time: "20:30",
+        task: "LIVE 3: live fuerte (demostraciones técnicas y cierre de ventas del día)."
+      }
+    ];
+
+    const DEFAULT_STRATEGIES = {
+      "10:15": {
+        objective:
+          "Enseñar algo rápido que genere confianza y posicionarte como experto.",
+        steps:
+          "- Hook: pregunta o error típico.\n- Mostrar el problema y la solución clara.\n- Ejemplo práctico con explicación simple.\n- Preguntar qué más quieren aprender.",
+        cta:
+          '“Si quieres el manual completo de este tema, escribe MANUAL en el chat.”',
+        notes: "Probar temas distintos cada día y ver cuál retiene más gente."
+      },
+      "15:00": {
+        objective:
+          "Cerrar ventas de manuales, cursos y apps sin perder el enfoque educativo.",
+        steps:
+          "- Mini clase de 3–5 minutos.\n- Contar historia o caso real de alumno.\n- Mostrar el contenido del producto.\n- Resolver 1–2 dudas en vivo.",
+        cta:
+          "Frases: “Escribe CURSO si quieres toda la ruta completa” / “Hoy el combo incluye bonus extra”.",
+        notes: "Revisar qué oferta convierte mejor: solo curso, curso + manual, etc."
+      },
+      "20:30": {
+        objective:
+          "Live fuerte de cierre: máximo alcance, máximas ventas, y construir comunidad.",
+        steps:
+          "- Repaso rápido de lo que se vio en el día.\n- Demostración técnica (motor, tablero, lógica cableada).\n- Mostrar por dentro el curso/manual.\n- Preguntas y respuestas.",
+        cta:
+          "“Solo hoy para los que están en este live, el combo tiene descuento especial. Escribe COMBO y te envío toda la info”.",
+        notes:
+          "Tomar nota de las preguntas más frecuentes para convertirlas en contenido futuro."
+      }
+    };
+
+    function getTodayISO() {
+      const d = new Date();
+      return d.toISOString().split("T")[0];
+    }
+
+    function storageKey(dateStr) {
+      return "agenda_full_" + dateStr;
+    }
+
+    function loadDay(dateStr) {
+      const saved = localStorage.getItem(storageKey(dateStr));
+      let data;
+      if (saved) {
+        data = JSON.parse(saved);
+      } else {
+        data = {
+          slots: DEFAULT_SLOTS.slice(),
+          strategies: {}
+        };
+      }
+      renderSlots(data.slots, data.strategies);
+      agendaView.style.display = "block";
+      strategyView.style.display = "none";
+      currentStrategyIndex = null;
+    }
+
+    function getCurrentDayData() {
+      const cards = [...slotsContainer.querySelectorAll(".card")];
+      const slots = cards.map((card) => {
+        const time = card.querySelector(".time-input").value || "";
+        const task = card.querySelector(".task-input").value || "";
+        const idx = card.dataset.index;
+        return { time, task, _index: Number(idx) };
+      });
+
+      const strategies = {};
+      cards.forEach((card) => {
+        const idx = card.dataset.index;
+        const s = card.dataset.strategy
+          ? JSON.parse(card.dataset.strategy)
+          : null;
+        if (s) strategies[idx] = s;
+      });
+
+      return {
+        slots: slots.map(({ time, task }) => ({ time, task })),
+        strategies
+      };
+    }
+
+    function saveDay() {
+      if (!dateInput.value) return;
+      const data = getCurrentDayData();
+      localStorage.setItem(storageKey(dateInput.value), JSON.stringify(data));
+    }
+
+    function ensureStrategyFor(idx, time, task, existingStrategies) {
+      if (existingStrategies[idx]) return existingStrategies[idx];
+
+      const base = DEFAULT_STRATEGIES[time] || {
+        objective:
+          "Definir claramente qué quieres lograr con esta actividad hoy (ventas, alcance, avance de curso, etc.).",
+        steps:
+          "Diseñar 3–5 pasos claros: introducción, desarrollo, ejemplo o demo, cierre.",
+        cta:
+          "Escribir 1–2 frases de llamada a la acción (comentarios, mensajes, ventas, suscripción).",
+        notes:
+          "Apuntar qué funcionó bien y qué puedes mejorar para la próxima vez."
+      };
+
+      return {
+        objective: base.objective,
+        steps: base.steps,
+        cta: base.cta,
+        notes: base.notes
+      };
+    }
+
+    function renderSlots(slots, strategies) {
+      slotsContainer.innerHTML = "";
+      const data = slots
+        .map((s, i) => ({ ...s, _index: i }))
+        .sort((a, b) => a.time.localeCompare(b.time));
+
+      data.forEach((slot) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.dataset.index = slot._index;
+
+        const timeInput = document.createElement("input");
+        timeInput.type = "time";
+        timeInput.className = "time-input";
+        timeInput.value = slot.time || "";
+        timeInput.disabled = !editMode;
+
+        const taskInput = document.createElement("input");
+        taskInput.type = "text";
+        taskInput.className = "task-input";
+        taskInput.value = slot.task || "";
+        taskInput.readOnly = !editMode;
+        taskInput.classList.toggle("locked", !editMode);
+
+        const strategyData = strategies[slot._index]
+          ? strategies[slot._index]
+          : null;
+        if (strategyData) {
+          card.dataset.strategy = JSON.stringify(strategyData);
+        }
+
+        // SOLO abre estrategia cuando la agenda está BLOQUEADA (no editMode)
+        taskInput.addEventListener("click", () => {
+          if (!editMode) {
+            openStrategyView(card);
+          }
+        });
+
+        timeInput.addEventListener("change", () => {
+          saveDay();
+        });
+
+        taskInput.addEventListener("change", saveDay);
+        taskInput.addEventListener("blur", () => {
+          if (editMode) saveDay();
+        });
+
+        const btnMove = document.createElement("button");
+        btnMove.className = "btn-small btn-move";
+        btnMove.textContent = "↕ Mover";
+        btnMove.addEventListener("click", () => {
+          if (!editMode) return;
+          handleMove(card);
+        });
+
+        const btnDelete = document.createElement("button");
+        btnDelete.className = "btn-small btn-delete";
+        btnDelete.textContent = "✕";
+        btnDelete.addEventListener("click", () => {
+          if (!editMode) return;
+          card.remove();
+          if (moveSourceCard === card) moveSourceCard = null;
+          saveDay();
+        });
+
+        card.appendChild(timeInput);
+        card.appendChild(taskInput);
+        card.appendChild(btnMove);
+        card.appendChild(btnDelete);
+
+        slotsContainer.appendChild(card);
+      });
+    }
+
+    function handleMove(card) {
+      if (!moveSourceCard) {
+        moveSourceCard = card;
+        card.classList.add("selected-move");
+      } else if (moveSourceCard === card) {
+        card.classList.remove("selected-move");
+        moveSourceCard = null;
+      } else {
+        const aTask = moveSourceCard.querySelector(".task-input");
+        const bTask = card.querySelector(".task-input");
+
+        const tempTask = aTask.value;
+        aTask.value = bTask.value;
+        bTask.value = tempTask;
+
+        const aStr =
+          moveSourceCard.dataset.strategy &&
+          JSON.parse(moveSourceCard.dataset.strategy);
+        const bStr =
+          card.dataset.strategy && JSON.parse(card.dataset.strategy);
+
+        if (aStr || bStr) {
+          moveSourceCard.dataset.strategy = JSON.stringify(bStr || {});
+          card.dataset.strategy = JSON.stringify(aStr || {});
+        }
+
+        moveSourceCard.classList.remove("selected-move");
+        moveSourceCard = null;
+        saveDay();
+
+        if (currentStrategyIndex !== null) {
+          const cards = [...slotsContainer.querySelectorAll(".card")];
+          const currentCard = cards.find(
+            (c) => Number(c.dataset.index) === currentStrategyIndex
+          );
+          if (currentCard) openStrategyView(currentCard, true);
+        }
+      }
+    }
+
+    function openStrategyView(card, fromRefresh = false) {
+      const idx = Number(card.dataset.index);
+      currentStrategyIndex = idx;
+
+      const time = card.querySelector(".time-input").value || "";
+      const task = card.querySelector(".task-input").value || "";
+
+      const savedData = getCurrentDayData();
+      const slots = savedData.slots;
+      let strategies = savedData.strategies || {};
+      const slot = slots[idx] || { time, task };
+
+      const strategyObj = ensureStrategyFor(
+        idx,
+        slot.time,
+        slot.task,
+        strategies
+      );
+
+      strategies[idx] = strategyObj;
+      card.dataset.strategy = JSON.stringify(strategyObj);
+      localStorage.setItem(
+        storageKey(dateInput.value),
+        JSON.stringify({ slots, strategies })
+      );
+
+      strategyDateLabel.textContent = dateInput.value || "";
+      strategyMainTitle.textContent =
+        slot.task || "Actividad sin descripción todavía";
+      strategySubTitle.textContent = slot.time
+        ? "Hora: " + slot.time
+        : "Define una hora para esta actividad";
+
+      fieldObjective.value = strategyObj.objective || "";
+      fieldSteps.value = strategyObj.steps || "";
+      fieldCTA.value = strategyObj.cta || "";
+      fieldNotes.value = strategyObj.notes || "";
+
+      agendaView.style.display = "none";
+      strategyView.style.display = "block";
+    }
+
+    function updateStrategyFromFields() {
+      if (currentStrategyIndex === null || !dateInput.value) return;
+      const savedData = getCurrentDayData();
+      const slots = savedData.slots;
+      let strategies = savedData.strategies || {};
+      const slot = slots[currentStrategyIndex] || {};
+
+      strategies[currentStrategyIndex] = {
+        objective: fieldObjective.value || "",
+        steps: fieldSteps.value || "",
+        cta: fieldCTA.value || "",
+        notes: fieldNotes.value || ""
+      };
+
+      localStorage.setItem(
+        storageKey(dateInput.value),
+        JSON.stringify({ slots, strategies })
+      );
+
+      const cards = [...slotsContainer.querySelectorAll(".card")];
+      const card = cards.find(
+        (c) => Number(c.dataset.index) === currentStrategyIndex
+      );
+      if (card) {
+        card.dataset.strategy = JSON.stringify(strategies[currentStrategyIndex]);
+      }
+    }
+
+    [fieldObjective, fieldSteps, fieldCTA, fieldNotes].forEach((el) => {
+      el.addEventListener("input", () => {
+        updateStrategyFromFields();
+      });
+      el.addEventListener("blur", () => {
+        updateStrategyFromFields();
+      });
+    });
+
+    backToAgenda.addEventListener("click", () => {
+      strategyView.style.display = "none";
+      agendaView.style.display = "block";
+    });
+
+    btnEdit.addEventListener("click", () => {
+      editMode = !editMode;
+      document
+        .querySelectorAll(".time-input")
+        .forEach((i) => (i.disabled = !editMode));
+      document.querySelectorAll(".task-input").forEach((i) => {
+        i.readOnly = !editMode;
+        i.classList.toggle("locked", !editMode);
+      });
+      if (!editMode) {
+        saveDay();
+        if (moveSourceCard) {
+          moveSourceCard.classList.remove("selected-move");
+          moveSourceCard = null;
+        }
+      }
+      btnEdit.textContent = editMode
+        ? "🔒 Bloquear agenda (guardar)"
+        : "✏️ Editar agenda";
+      btnEdit.classList.toggle("off", !editMode);
+    });
+
+    btnAddSlot.addEventListener("click", () => {
+      if (!editMode) {
+        alert("Activa 'Editar agenda' para agregar horas.");
+        return;
+      }
+      const time = prompt("Ingresa la hora HH:MM:", "12:00");
+      if (!time || !/^\d{2}:\d{2}$/.test(time)) return;
+      const saved = getCurrentDayData();
+      saved.slots.push({ time, task: "" });
+      localStorage.setItem(
+        storageKey(dateInput.value),
+        JSON.stringify(saved)
+      );
+      renderSlots(saved.slots, saved.strategies || {});
+    });
+
+    dateInput.addEventListener("change", () => {
+      if (!dateInput.value) return;
+      moveSourceCard = null;
+      currentStrategyIndex = null;
+      loadDay(dateInput.value);
+    });
+
+    // Tema claro/oscuro
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("agenda_theme", theme);
+      themeToggle.textContent =
+        theme === "dark" ? "☀️ Modo claro" : "🌙 Modo oscuro";
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
+    // Inicializar
+    window.addEventListener("DOMContentLoaded", () => {
+      const savedTheme = localStorage.getItem("agenda_theme") || "dark";
+      applyTheme(savedTheme);
+
+      const today = getTodayISO();
+      dateInput.value = today;
+      loadDay(today);
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
